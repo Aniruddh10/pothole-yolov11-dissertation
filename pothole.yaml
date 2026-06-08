@@ -1,0 +1,9 @@
+path: C:/Users/Aniruddh/OneDrive/Documents/PotholeProject/PotholeProject/datasets
+
+train: train/images
+val: valid/images
+
+nc: 1
+
+names:
+  0: pothole  
