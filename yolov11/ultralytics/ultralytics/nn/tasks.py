@@ -37,6 +37,8 @@ from ultralytics.nn.modules import (
     CBLinear,
     Classify,
     Concat,
+    BiFPN_Concat,
+    CBAM,
     Conv,
     Conv2,
     ConvTranspose,
@@ -271,8 +273,43 @@ class BaseModel(nn.Module):
             verbose (bool, optional): Whether to log the transfer progress. Defaults to True.
         """
         model = weights["model"] if isinstance(weights, dict) else weights  # torchvision models are not dicts
-        csd = model.float().state_dict()  # checkpoint state_dict as FP32
-        csd = intersect_dicts(csd, self.state_dict())  # intersect
+        
+        # Check if we need to map keys for CBAM model due to index shifts in the backbone
+        is_cbam_model = any("model.5.channel_attention" in k for k in self.state_dict().keys())
+        has_cbam_weights = any("model.5.channel_attention" in k for k in model.state_dict().keys())
+        
+        if is_cbam_model and not has_cbam_weights:
+            LOGGER.info("Mapping pretrained weights to CBAM architecture...")
+            new_csd = {}
+            for k, v in model.float().state_dict().items():
+                if k.startswith("model."):
+                    parts = k.split(".", 2)
+                    if len(parts) >= 3:
+                        idx = int(parts[1])
+                        # Map old index to new index:
+                        # - Insert CBAM at 5: Old index 5, 6 become 6, 7.
+                        # - Insert CBAM at 8: Old index 7, 8, 9, 10 become 9, 10, 11, 12.
+                        # - Insert CBAM at 13: Old index 11, 12, ... become 14, 15, ...
+                        if idx < 5:
+                            new_idx = idx
+                        elif 5 <= idx < 7:
+                            new_idx = idx + 1
+                        elif 7 <= idx < 11:
+                            new_idx = idx + 2
+                        else:
+                            new_idx = idx + 3
+                        
+                        new_key = f"model.{new_idx}.{parts[2]}"
+                        new_csd[new_key] = v
+                    else:
+                        new_csd[k] = v
+                else:
+                    new_csd[k] = v
+            csd = intersect_dicts(new_csd, self.state_dict())
+        else:
+            csd = model.float().state_dict()  # checkpoint state_dict as FP32
+            csd = intersect_dicts(csd, self.state_dict())  # intersect
+
         self.load_state_dict(csd, strict=False)  # load
         if verbose:
             LOGGER.info(f"Transferred {len(csd)}/{len(self.model.state_dict())} items from pretrained weights")
@@ -1029,6 +1066,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 args[3] = True
         elif m is AIFI:
             args = [ch[f], *args]
+        elif m is CBAM:
+            args = [ch[f], *args]
         elif m in {HGStem, HGBlock}:
             c1, cm, c2 = ch[f], args[0], args[1]
             args = [c1, cm, c2, *args[2:]]
@@ -1039,7 +1078,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             c2 = args[1] if args[3] else args[1] * 4
         elif m is nn.BatchNorm2d:
             args = [ch[f]]
-        elif m is Concat:
+        elif m in {Concat, BiFPN_Concat}:
             c2 = sum(ch[x] for x in f)
         elif m in {Detect, WorldDetect, Segment, Pose, OBB, ImagePoolingAttn, v10Detect}:
             args.append([ch[x] for x in f])

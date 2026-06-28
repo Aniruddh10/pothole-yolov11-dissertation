@@ -58,6 +58,7 @@ from .block import (
     SCDown,
 )
 from .conv import (
+    BiFPN_Concat,
     CBAM,
     ChannelAttention,
     Concat,
@@ -100,6 +101,7 @@ __all__ = (
     "SpatialAttention",
     "CBAM",
     "Concat",
+    "BiFPN_Concat",
     "TransformerLayer",
     "TransformerBlock",
     "MLPBlock",

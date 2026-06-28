@@ -330,3 +330,22 @@ class Concat(nn.Module):
     def forward(self, x):
         """Forward pass for the YOLOv8 mask Proto module."""
         return torch.cat(x, self.d)
+
+
+class BiFPN_Concat(nn.Module):
+    """Weighted BiFPN Concatenation with learnable parameters."""
+
+    def __init__(self, dimension=1, n=2):
+        """Initializes the BiFPN Concat layer with n inputs."""
+        super().__init__()
+        self.d = dimension
+        # Learnable weights initialized to 1 for each input
+        self.w = nn.Parameter(torch.ones(n, dtype=torch.float32), requires_grad=True)
+        self.epsilon = 1e-4
+
+    def forward(self, x):
+        """Forward pass applying normalized weights to inputs then concatenating."""
+        w = torch.relu(self.w)
+        weight = w / (torch.sum(w, dim=0) + self.epsilon)
+        return torch.cat([weight[i] * x[i] for i in range(len(x))], self.d)
+
