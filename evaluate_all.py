@@ -93,9 +93,97 @@ def evaluate_models(data_yaml, results_dir, output_csv="test_evaluation_results.
     df.to_csv(output_csv, index=False)
     print(f"\n[✓] Saved evaluation results to {output_csv}")
     
-    # Print markdown table
-    print("\n### Model Performance Comparison (Test Split) ###\n")
-    print(df.to_markdown(index=False))
+    # Generate Ablation Study Tables
+    ablation_mapping = {
+        "Baseline (50 epochs)": {"Configuration": "Baseline", "BiFPN": "✗", "CBAM": "✗", "Epochs": 50},
+        "BiFPN (50 epochs)": {"Configuration": "+ BiFPN", "BiFPN": "✓", "CBAM": "✗", "Epochs": 50},
+        "CBAM (50 epochs)": {"Configuration": "+ CBAM", "BiFPN": "✗", "CBAM": "✓", "Epochs": 50},
+        "Combined BiFPN+CBAM (50 epochs)": {"Configuration": "Proposed (BiFPN+CBAM)", "BiFPN": "✓", "CBAM": "✓", "Epochs": 50},
+        "Baseline (75 epochs)": {"Configuration": "Baseline", "BiFPN": "✗", "CBAM": "✗", "Epochs": 75},
+        "BiFPN (75 epochs)": {"Configuration": "+ BiFPN", "BiFPN": "✓", "CBAM": "✗", "Epochs": 75},
+        "CBAM (75 epochs)": {"Configuration": "+ CBAM", "BiFPN": "✗", "CBAM": "✓", "Epochs": 75},
+        "Combined BiFPN+CBAM (75 epochs)": {"Configuration": "Proposed (BiFPN+CBAM)", "BiFPN": "✓", "CBAM": "✓", "Epochs": 75},
+    }
+    
+    ablation_rows = []
+    for _, row in df.iterrows():
+        model_name = row["Model Name"]
+        if model_name in ablation_mapping:
+            info = ablation_mapping[model_name]
+            new_row = {
+                "Configuration": info["Configuration"],
+                "BiFPN": info["BiFPN"],
+                "CBAM": info["CBAM"],
+                "Precision": row["Precision"],
+                "Recall": row["Recall"],
+                "F1-Score": row["F1-Score"],
+                "mAP50": row["mAP50"],
+                "mAP50-95": row["mAP50-95"],
+                "Params (M)": row["Params (M)"],
+                "Latency (ms)": row["Total Latency (ms)"],
+                "Epochs": info["Epochs"]
+            }
+            ablation_rows.append(new_row)
+            
+    if ablation_rows:
+        df_ab = pd.DataFrame(ablation_rows)
+        
+        md_content = "# Ablation Study Results\n\n"
+        latex_content = "% --- Ablation Study LaTeX Tables ---\n\n"
+        
+        for epochs in [50, 75]:
+            df_epoch = df_ab[df_ab["Epochs"] == epochs].copy()
+            if df_epoch.empty:
+                continue
+                
+            # Drop the Epochs column for presentation
+            df_epoch_clean = df_epoch.drop(columns=["Epochs"])
+            
+            # 1. Append to Markdown file
+            md_content += f"## Ablation Study ({epochs} Epochs)\n\n"
+            md_content += df_epoch_clean.to_markdown(index=False) + "\n\n"
+            
+            # 2. Append to LaTeX file
+            latex_table = []
+            latex_table.append(r"\begin{table}[h]")
+            latex_table.append(r"  \centering")
+            latex_table.append(r"  \caption{Ablation Study of Proposed YOLO11 Modifications (" + str(epochs) + " Epochs)}")
+            latex_table.append(r"  \label{tab:ablation_" + str(epochs) + "}")
+            latex_table.append(r"  \begin{tabular}{l|cc|ccccc|c|r}")
+            latex_table.append(r"    \hline")
+            latex_table.append(r"    Configuration & BiFPN & CBAM & Precision & Recall & F1-Score & mAP50 & mAP50-95 & Params (M) & Latency (ms) \\")
+            latex_table.append(r"    \hline")
+            
+            for _, r in df_epoch_clean.iterrows():
+                bifpn_sym = r"\checkmark" if r["BiFPN"] == "✓" else r"\times"
+                cbam_sym = r"\checkmark" if r["CBAM"] == "✓" else r"\times"
+                latex_table.append(
+                    f"    {r['Configuration']} & {bifpn_sym} & {cbam_sym} & "
+                    f"{r['Precision']:.4f} & {r['Recall']:.4f} & {r['F1-Score']:.4f} & "
+                    f"{r['mAP50']:.4f} & {r['mAP50-95']:.4f} & "
+                    f"{r['Params (M)']:.2f} & {r['Latency (ms)']:.2f} \\\\"
+                )
+            
+            latex_table.append(r"    \hline")
+            latex_table.append(r"  \end{tabular}")
+            latex_table.append(r"\end{table}")
+            
+            latex_content += "\n".join(latex_table) + "\n\n"
+            
+            # Print to console
+            print(f"\n### Ablation Study ({epochs} Epochs) ###\n")
+            print(df_epoch_clean.to_markdown(index=False))
+            
+        # Write files
+        with open("ablation_study.md", "w") as f:
+            f.write(md_content)
+        with open("ablation_study.tex", "w") as f:
+            f.write(latex_content)
+            
+        print("\n[✓] Generated 'ablation_study.md' and 'ablation_study.tex' (for copy-pasting directly into Overleaf/LaTeX)!")
+    else:
+        print("\n### Model Performance Comparison (Test Split) ###\n")
+        print(df.to_markdown(index=False))
 
 if __name__ == "__main__":
     import argparse
