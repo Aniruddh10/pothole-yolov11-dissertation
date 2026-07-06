@@ -51,6 +51,7 @@ def evaluate_models(data_yaml, results_dir, output_csv="test_evaluation_results.
             recall = metrics.results_dict.get("metrics/recall(B)", 0.0)
             map50 = metrics.results_dict.get("metrics/mAP50(B)", 0.0)
             map50_95 = metrics.results_dict.get("metrics/mAP50-95(B)", 0.0)
+            f1_score = 2 * (precision * recall) / (precision + recall + 1e-8)
             
             # Speed metrics (in milliseconds per image)
             speed = metrics.speed
@@ -66,6 +67,7 @@ def evaluate_models(data_yaml, results_dir, output_csv="test_evaluation_results.
                 "Model Name": name,
                 "Precision": round(precision, 4),
                 "Recall": round(recall, 4),
+                "F1-Score": round(f1_score, 4),
                 "mAP50": round(map50, 4),
                 "mAP50-95": round(map50_95, 4),
                 "Params (M)": round(params, 2),
