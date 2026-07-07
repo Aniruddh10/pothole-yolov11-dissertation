@@ -26,8 +26,25 @@ def evaluate_models(data_yaml, results_dir, output_csv="test_evaluation_results.
         
         # Check if the weight file actually exists (some runs might not have finished or been renamed)
         if not os.path.exists(weight_path):
-            print(f"[-] Checkpoint not found for {name} at {weight_path}. Skipping.")
-            continue
+            # Try case-insensitive folder search
+            parts = relative_path.split("/")
+            if len(parts) >= 2 and os.path.exists(results_dir):
+                folder_name = parts[0]
+                sub_path = "/".join(parts[1:])
+                found = False
+                for entry in os.listdir(results_dir):
+                    if entry.lower() == folder_name.lower():
+                        alternative_path = os.path.join(results_dir, entry, sub_path)
+                        if os.path.exists(alternative_path):
+                            weight_path = alternative_path
+                            found = True
+                            break
+                if not found:
+                    print(f"[-] Checkpoint not found for {name} (tried case-insensitive search). Skipping.")
+                    continue
+            else:
+                print(f"[-] Checkpoint not found for {name} at {weight_path}. Skipping.")
+                continue
             
         print(f"\n[+] Evaluating {name}...")
         try:

@@ -38,11 +38,31 @@ def compare_predictions(image_path, results_dir, output_dir="comparison_results"
         weight_path = os.path.join(results_dir, rel_path)
         
         if not os.path.exists(weight_path):
-            print(f"[-] Checkpoint not found for {name} at {weight_path}. Using placeholder.")
-            axes[i].imshow(img_rgb)
-            axes[i].set_title(f"{name} (No Checkpoint)", fontsize=14, color="red")
-            axes[i].axis("off")
-            continue
+            # Try case-insensitive folder search
+            parts = rel_path.split("/")
+            if len(parts) >= 2 and os.path.exists(results_dir):
+                folder_name = parts[0]
+                sub_path = "/".join(parts[1:])
+                found = False
+                for entry in os.listdir(results_dir):
+                    if entry.lower() == folder_name.lower():
+                        alternative_path = os.path.join(results_dir, entry, sub_path)
+                        if os.path.exists(alternative_path):
+                            weight_path = alternative_path
+                            found = True
+                            break
+                if not found:
+                    print(f"[-] Checkpoint not found for {name} (tried case-insensitive search). Using placeholder.")
+                    axes[i].imshow(img_rgb)
+                    axes[i].set_title(f"{name} (No Checkpoint)", fontsize=14, color="red")
+                    axes[i].axis("off")
+                    continue
+            else:
+                print(f"[-] Checkpoint not found for {name} at {weight_path}. Using placeholder.")
+                axes[i].imshow(img_rgb)
+                axes[i].set_title(f"{name} (No Checkpoint)", fontsize=14, color="red")
+                axes[i].axis("off")
+                continue
             
         try:
             # Load and run inference

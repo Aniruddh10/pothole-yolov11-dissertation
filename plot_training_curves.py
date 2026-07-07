@@ -44,8 +44,22 @@ def plot_training_curves(results_dir, output_dir="training_plots"):
         csv_path = os.path.join(results_dir, folder, "results.csv")
         
         if not os.path.exists(csv_path):
-            print(f"[-] Training log results.csv not found at: {csv_path}. Skipping.")
-            continue
+            # Try case-insensitive folder search
+            if os.path.exists(results_dir):
+                found = False
+                for entry in os.listdir(results_dir):
+                    if entry.lower() == folder.lower():
+                        alternative_path = os.path.join(results_dir, entry, "results.csv")
+                        if os.path.exists(alternative_path):
+                            csv_path = alternative_path
+                            found = True
+                            break
+                if not found:
+                    print(f"[-] Training log results.csv not found for {label} (tried case-insensitive search). Skipping.")
+                    continue
+            else:
+                print(f"[-] Training log results.csv not found at: {csv_path}. Skipping.")
+                continue
             
         print(f"[+] Loading training curves for {label}...")
         try:
