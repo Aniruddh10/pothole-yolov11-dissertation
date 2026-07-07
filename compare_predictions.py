@@ -13,7 +13,7 @@ def compare_predictions(image_path, results_dir, output_dir="comparison_results"
     # 75-epoch variants are chosen as they represent the fully converged models
     model_paths = {
         "Baseline": "baseline_yolo11s_75ep/weights/best.pt",
-        "BiFPN (Neck)": "bifpn_yolo11s_75ep/weights/best.pt",
+        "BiFPN (Neck)": "BiFPN_yolo11s_75ep/weights/best.pt",
         "CBAM (Attention)": "cbam_yolo11s_75ep/weights/best.pt",
         "Combined (BiFPN+CBAM)": "bifpn_cbam_yolo11s_75ep/weights/best.pt"
     }

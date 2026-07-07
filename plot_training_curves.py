@@ -12,13 +12,13 @@ def plot_training_curves(results_dir, output_dir="training_plots"):
     
     # Define directories containing training logs
     model_dirs = {
-        "Baseline (50ep)": "baseline_yolo11s",
+        "Baseline (50ep)": "baseline_yolo11s33",
         "Baseline (75ep)": "baseline_yolo11s_75ep",
         "BiFPN (50ep)": "bifpn_yolo11s",
-        "BiFPN (75ep)": "bifpn_yolo11s_75ep",
+        "BiFPN (75ep)": "BiFPN_yolo11s_75ep",
         "CBAM (50ep)": "cbam_yolo11s",
         "CBAM (75ep)": "cbam_yolo11s_75ep",
-        "Combined (50ep)": "bifpn_cbam_yolo11s",
+        "Combined (50ep)": "bifpn_cbam_yolo11s_50ep",
         "Combined (75ep)": "bifpn_cbam_yolo11s_75ep"
     }
 

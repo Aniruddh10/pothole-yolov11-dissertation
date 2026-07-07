@@ -9,13 +9,13 @@ def evaluate_models(data_yaml, results_dir, output_csv="test_evaluation_results.
     """
     # Define the models we want to look for and evaluate
     model_configs = {
-        "Baseline (50 epochs)": "baseline_yolo11s/weights/best.pt",
+        "Baseline (50 epochs)": "baseline_yolo11s33/weights/best.pt",
         "Baseline (75 epochs)": "baseline_yolo11s_75ep/weights/best.pt",
         "BiFPN (50 epochs)": "bifpn_yolo11s/weights/best.pt",
-        "BiFPN (75 epochs)": "bifpn_yolo11s_75ep/weights/best.pt",
+        "BiFPN (75 epochs)": "BiFPN_yolo11s_75ep/weights/best.pt",
         "CBAM (50 epochs)": "cbam_yolo11s/weights/best.pt",
         "CBAM (75 epochs)": "cbam_yolo11s_75ep/weights/best.pt",
-        "Combined BiFPN+CBAM (50 epochs)": "bifpn_cbam_yolo11s/weights/best.pt",
+        "Combined BiFPN+CBAM (50 epochs)": "bifpn_cbam_yolo11s_50ep/weights/best.pt",
         "Combined BiFPN+CBAM (75 epochs)": "bifpn_cbam_yolo11s_75ep/weights/best.pt",
     }
 
